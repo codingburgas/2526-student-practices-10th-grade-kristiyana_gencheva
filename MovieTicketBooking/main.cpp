@@ -1,219 +1,80 @@
-#include <iostream>
-#include <vector>
-#include <string>
-#include <conio.h>
-#include <windows.h>
+#include "raylib.h"
 
-using namespace std;
-
-HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-
-
-void color(int c) { SetConsoleTextAttribute(h, c); }
-void pink() { color(13); }
-void green() { color(10); }
-void red() { color(12); }
-void white() { color(15); }
-void cyan() { color(11); }
-
-
-void clear() { system("cls"); }
-
-
-void header(string title)
+enum Screen
 {
-    clear();
-    pink();
-    cout << "==== MOVIE SYSTEM ====\n\n";
-    cyan();
-    cout << title << "\n\n";
-    white();
-}
-
-
-void pause()
-{
-    cout << "\nPress Enter...";
-    cin.ignore();
-    cin.get();
-}
-
-
-int menu(vector<string> items, string title)
-{
-    int selected = 0;
-
-    while (true)
-    {
-        header(title);
-
-        for (int i = 0; i < items.size(); i++)
-        {
-            if (i == selected)
-            {
-                green();
-                cout << "> " << items[i] << "\n";
-            }
-            else
-            {
-                white();
-                cout << "  " << items[i] << "\n";
-            }
-        }
-
-        int key = _getch();
-
-        if (key == 224)
-        {
-            key = _getch();
-            if (key == 72) selected--;
-            if (key == 80) selected++;
-        }
-
-        if (selected < 0) selected = items.size() - 1;
-        if (selected >= items.size()) selected = 0;
-
-        if (key == 13) return selected;
-    }
-}
-
-
-struct Movie
-{
-    int id;
-    string title;
+    MENU,
+    MOVIES,
+    ADMIN
 };
 
-struct Show
+bool Button(Rectangle rect, const char* text)
 {
-    int id;
-    int movieId;
-    string time;
-};
+    Vector2 mouse = GetMousePosition();
+    bool hover = CheckCollisionPointRec(mouse, rect);
 
-struct Booking
-{
-    string name;
-    int showId;
-};
+    DrawRectangleRec(rect, hover ? LIGHTGRAY : GRAY);
+    DrawRectangleLinesEx(rect, 2, DARKGRAY);
 
+    DrawText(text, rect.x + 45, rect.y + 13, 20, BLACK);
 
-vector<Movie> movies;
-vector<Show> shows;
-vector<Booking> bookings;
-
-
-void seed()
-{
-    movies.push_back({ 1, "Interstellar" });
-    movies.push_back({ 2, "Frozen" });
-    movies.push_back({ 3, "Parasite" });
-
-    shows.push_back({ 1, 1, "18:00" });
-    shows.push_back({ 2, 2, "20:00" });
+    return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
-
-
-void showMovies()
-{
-    header("Movies");
-
-    for (auto m : movies)
-    {
-        cout << m.id << ". " << m.title << "\n";
-    }
-
-    pause();
-}
-
-
-void showShows()
-{
-    header("Shows");
-
-    for (auto s : shows)
-    {
-        string movieName = "Unknown";
-
-        for (auto m : movies)
-            if (m.id == s.movieId)
-                movieName = m.title;
-
-        cout << "Show " << s.id << " | " << movieName << " | " << s.time << "\n";
-    }
-
-    pause();
-}
-
-void makeBooking()
-{
-    header("Make booking");
-
-    showShows();
-
-    int showId;
-    cout << "\nEnter show ID: ";
-    cin >> showId;
-
-    cin.ignore();
-
-    string name;
-    cout << "Your name: ";
-    getline(cin, name);
-
-    bookings.push_back({ name, showId });
-
-    green();
-    cout << "\nBooking successful!\n";
-    white();
-
-    pause();
-}
-
-
-void showBookings()
-{
-    header("Bookings");
-
-    if (bookings.empty())
-    {
-        red();
-        cout << "No bookings.\n";
-    }
-    else
-    {
-        for (auto b : bookings)
-        {
-            cout << b.name << " -> Show " << b.showId << "\n";
-        }
-    }
-
-    pause();
-}
-
 
 int main()
 {
-    seed();
+    InitWindow(1000, 700, "CatCinema");
+    SetTargetFPS(60);
 
-    vector<string> mainMenu =
+    Screen currentScreen = MENU;
+
+    while (!WindowShouldClose())
     {
-        "Movies",
-        "Shows",
-        "Make booking",
-        "View bookings",
-        "Exit"
-    };
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
 
-    while (true)
-    {
-        int choice = menu(mainMenu, "Main Menu");
+        if (currentScreen == MENU)
+        {
+            DrawText("CatCinema", 370, 120, 50, DARKPURPLE);
+            DrawText("Movie Ticket Booking System", 330, 180, 22, DARKGRAY);
 
-        if (choice == 0) showMovies();
-        else if (choice == 1) showShows();
-        else if (choice == 2) makeBooking();
-        else if (choice == 3) showBookings();
-        else break;
+            if (Button({ 380, 280, 240, 50 }, "View Movies"))
+            {
+                currentScreen = MOVIES;
+            }
+
+            if (Button({ 380, 350, 240, 50 }, "Admin Panel"))
+            {
+                currentScreen = ADMIN;
+            }
+
+            if (Button({ 380, 420, 240, 50 }, "Exit"))
+            {
+                CloseWindow();
+                return 0;
+            }
+        }
+        else if (currentScreen == MOVIES)
+        {
+            DrawText("Movies screen", 390, 250, 35, BLACK);
+
+            if (Button({ 30, 620, 140, 45 }, "Back"))
+            {
+                currentScreen = MENU;
+            }
+        }
+        else if (currentScreen == ADMIN)
+        {
+            DrawText("Admin screen", 400, 250, 35, BLACK);
+
+            if (Button({ 30, 620, 140, 45 }, "Back"))
+            {
+                currentScreen = MENU;
+            }
+        }
+
+        EndDrawing();
     }
 
+    CloseWindow();
+ 
 }
